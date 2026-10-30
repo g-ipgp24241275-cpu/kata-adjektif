@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="ms" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AVIA MASTERS: KATA ADJEKTIF SIFAT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b132b; color: #f8fafc; overflow: hidden; }
+        .glow-text { text-shadow: 0 0 15px rgba(59, 130, 246, 0.6); }
+        .card-glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        @keyframes pulseGlow {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(59,130,246,0.5)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 20px rgba(59,130,246,0.9)); }
+        }
+        .animate-pulse-glow { animation: pulseGlow 2s infinite; }
+    </style>
+</head>
+<body class="h-full flex flex-col justify-between select-none">
+
+    <!-- TOP HUD BAR -->
+    <header class="w-full card-glass px-4 py-3 flex flex-wrap items-center justify-between z-20 shadow-lg border-b border-blue-900/40">
+        <div class="flex items-center space-x-3">
+            <div class="bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 rounded-xl font-extrabold text-sm tracking-wider shadow-md text-white border border-blue-400/30">
+                ✈️ AVIA MASTERS
+            </div>
+            <h1 class="text-xs md:text-sm font-semibold text-blue-300 hidden sm:inline">Kata Adjektif Sifat</h1>
+        </div>
+
+        <div class="flex items-center space-x-4 md:space-x-8 text-xs md:text-sm">
+            <div class="flex flex-col items-center">
+                <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Skor</span>
+                <span id="hudScore" class="font-extrabold text-amber-400 text-base md:text-lg">0</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Pengganda</span>
+                <span id="hudMultiplier" class="font-extrabold text-emerald-400 text-base md:text-lg">x1.0</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Ketinggian</span>
+                <span id="hudAltitude" class="font-extrabold text-blue-200 text-base md:text-lg">0.0m</span>
+            </div>
+            <div class="flex flex-col items-center">
+                <span class="text-slate-400 text-[10px] uppercase font-bold tracking-wider">Nyawa</span>
+                <div id="hudLives" class="flex space-x-1 text-rose-500 text-base md:text-lg">❤️❤️❤️</div>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2">
+            <button onclick="togglePause()" id="pauseBtn" class="bg-slate-800 hover:bg-slate-700 text-blue-300 px-3 py-1.5 rounded-lg text-xs font-bold border border-slate-700 transition">Jeda</button>
+            <button onclick="openGuide()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold shadow transition">Nota 📚</button>
+        </div>
+    </header>
+
+    <!-- MAIN GAME AREA -->
+    <main class="relative flex-1 w-full overflow-hidden flex items-center justify-center">
+        <canvas id="gameCanvas" class="absolute inset-0 w-full h-full cursor-crosshair"></canvas>
+
+        <!-- START SCREEN OVERLAY -->
+        <div id="startScreen" class="absolute inset-0 z-30 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+            <div class="card-glass p-8 rounded-3xl max-w-lg w-full shadow-2xl border border-blue-500/30">
+                <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-2xl mx-auto flex items-center justify-center text-4xl shadow-lg mb-6 animate-pulse-glow">
+                    ✈️
+                </div>
+                <h2 class="text-2xl md:text-3xl font-extrabold text-white mb-2">Avia Masters: Adjektif Sifat</h2>
+                <p class="text-slate-300 text-sm mb-6 leading-relaxed">
+                    Pandu kapal terbang anda! Kumpul orb perkataan <span class="text-emerald-400 font-bold">Kata Adjektif Sifat</span> (cth: <em>baik, rajin, bijak</em>) untuk naikkan pengganda & skor. Elakkan kata adjektif lain (cth: <em>merah, masin, bulat</em>)!
+                </p>
+                <div class="grid grid-cols-2 gap-3 mb-6 text-left text-xs bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                    <div>
+                        <span class="text-emerald-400 font-bold block mb-1">✅ Tangkap:</span>
+                        <p class="text-slate-400">Baik, Rajin, Bijak, Berani, Comel, Jujur, Cerdik, Tenang</p>
+                    </div>
+                    <div>
+                        <span class="text-rose-400 font-bold block mb-1">❌ Elakkan (Bahaya):</span>
+                        <p class="text-slate-400">Merah (Warna), Masin (Rasa), Bulat (Bentuk), Deras (Cara)</p>
+                    </div>
+                </div>
+                <button onclick="startGame()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl shadow-lg shadow-blue-600/30 transition transform hover:-translate-y-0.5">
+                    MULAKAN PENERBANGAN 🚀
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME OVER SCREEN OVERLAY -->
+        <div id="gameOverScreen" class="absolute inset-0 z-30 bg-slate-950/95 backdrop-blur-md hidden flex flex-col items-center justify-center p-6 text-center">
+            <div class="card-glass p-8 rounded-3xl max-w-md w-full shadow-2xl border border-rose-500/30">
+                <div class="text-5xl mb-4">💥✈️</div>
+                <h2 class="text-2xl font-extrabold text-rose-400 mb-1">Kapal Terbakar / Hempas!</h2>
+                <p class="text-slate-400 text-sm mb-6">Misi tamat. Mari semak pencapaian anda.</p>
+                
+                <div class="bg-slate-900/80 rounded-2xl p-4 mb-6 space-y-3 border border-slate-800 text-left">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Skor Akhir:</span>
+                        <span id="finalScore" class="font-bold text-amber-400">0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Pengganda Maksimum:</span>
+                        <span id="finalMultiplier" class="font-bold text-emerald-400">x1.0</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-slate-400">Jarak Penerbangan:</span>
+                        <span id="finalDistance" class="font-bold text-blue-300">0.0m</span>
+                    </div>
+                </div>
+
+                <button onclick="resetGame()" class="w-full py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl shadow-lg transition">
+                    CUBA LAGI 🔄
+                </button>
+            </div>
+        </div>
+
+        <!-- NOTA / GUIDE MODAL -->
+        <div id="guideModal" class="absolute inset-0 z-40 bg-slate-950/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+            <div class="card-glass p-6 rounded-2xl max-w-lg w-full border border-blue-500/30 max-h-[85vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-white">📚 Nota: Kata Adjektif Sifat</h3>
+                    <button onclick="closeGuide()" class="text-slate-400 hover:text-white font-bold text-xl px-2">✕</button>
+                </div>
+                <p class="text-xs text-slate-300 mb-4 leading-relaxed">
+                    <strong class="text-blue-400">Kata Adjektif Sifat</strong> ialah perkataan yang menerangkan sifat atau keadaan sebagai unsur keterangan kepada kata nama (contoh: <em>baik, rajin, bijak, berani, comel, jujur, cerdik, tenang</em>).
+                </p>
+                <div class="space-y-3 text-xs text-slate-300">
+                    <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                        <span class="font-bold text-emerald-400 block mb-1">Ciri-ciri Sasaran Betul (+ Mata & + Pengganda):</span>
+                        <ul class="list-disc list-inside space-y-1 text-slate-400">
+                            <li>Sifat peribadi/mental: baik, rajin, bijak, cerdik, jujur, sabar.</li>
+                            <li>Sifat fizikal/keadaan: comel, cantik, bersih, kemas, sihat.</li>
+                        </ul>
+                    </div>
+                    <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800">
+                        <span class="font-bold text-rose-400 block mb-1">Ciri-ciri Perangkap (Mengurangkan Nyawa):</span>
+                        <ul class="list-disc list-inside space-y-1 text-slate-400">
+                            <li>Warna: Merah, Biru, Hijau, Kuning</li>
+                            <li>Rasa: Masin, Manis, Pahit, Tawar</li>
+                            <li>Bentuk: Bulat, Lonjong, Segi empat</li>
+                            <li>Cara: Deras, Perlahan, Laju</li>
+                        </ul>
+                    </div>
+                </div>
+                <button onclick="closeGuide()" class="w-full mt-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow">
+                    Faham & Sambung Main 👍
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- MOBILE TOUCH CONTROLS BAR -->
+    <footer class="w-full card-glass px-4 py-2.5 flex justify-between items-center z-20 border-t border-blue-900/40 text-xs text-slate-400">
+        <div class="flex items-center space-x-2">
+            <span class="hidden sm:inline">Kawal:</span>
+            <span class="bg-slate-800 px-2 py-1 rounded border border-slate-700 text-blue-200">W/A/S/D atau Kekunci Anak Panah / Gerakkan Tetikus</span>
+        </div>
+        <div class="text-slate-400 font-medium">
+            Kumpul <span class="text-emerald-400 font-bold">Adjektif Sifat</span> • Elak Perangkap!
+        </div>
+    </footer>
+
+    <!-- GAME ENGINE SCRIPT -->
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Game States
+        let gameState = 'START'; // START, PLAYING, PAUSED, GAMEOVER
+        let score = 0;
+        let multiplier = 1.0;
+        let maxMultiplier = 1.0;
+        let altitude = 25.0;
+        let distance = 0.0;
+        let lives = 3;
+
+        // Word Bank Definitions
+        const adjSifat = [
+            { word: 'BAIK', desc: 'Sifat mulia' },
+            { word: 'RAJIN', desc: 'Suka berusaha' },
+            { word: 'BIJAK', desc: 'Pandai/Bijaksana' },
+            { word: 'BERANI', desc: 'Tidak takut' },
+            { word: 'COMEL', desc: 'Cantik/Elok' },
+            { word: 'JUJUR', desc: 'Ikhlas/Amanah' },
+            { word: 'CERDIK', desc: 'Pintar' },
+            { word: 'TENANG', desc: 'Damai/Sabar' },
+            { word: 'BERSIH', desc: 'Suci/Kemas' },
+            { word: 'SABAR', desc: 'Tabah hati' }
+        ];
+
+        const adjLain = [
+            { word: 'MERAH', cat: 'Warna' },
+            { word: 'MASIN', cat: 'Rasa' },
+            { word: 'BULAT', cat: 'Bentuk' },
+            { word: 'SEBENTAR', cat: 'Waktu' },
+            { word: 'DERAS', cat: 'Cara' },
+            { word: 'JAUH', cat: 'Jarak' },
+            { word: 'BISING', cat: 'Suasana' },
+            { word: 'BIRU', cat: 'Warna' },
+            { word: 'MANIS', cat: 'Rasa' },
+            { word: 'TAJAM', cat: 'Bentuk/Sifat Fizikal' }
+        ];
+
+        // Player (Airplane) Object
+        let player = {
+            x: 100,
+            y: 200,
+            width: 70,
+            height: 40,
+            speed: 5,
+            targetY: 200,
+            targetX: 100
+        };
+
+        // Input Tracking
+        const keys = {};
+        let mouseControl = false;
+
+        window.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            player.targetX = e.clientX - rect.left;
+            player.targetY = e.clientY - rect.top;
+            mouseControl = true;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            if(e.touches.length > 0) {
+                player.targetX = e.touches[0].clientX - rect.left;
+                player.targetY = e.touches[0].clientY - rect.top;
+                mouseControl = true;
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        // Entities arrays
+        let orbs = [];
+        let particles = [];
+        let floatingTexts = [];
+        let spawnTimer = 0;
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            if(gameState === 'START') {
+                player.x = canvas.width * 0.2;
+                player.y = canvas.height * 0.5;
+                player.targetX = player.x;
+                player.targetY = player.y;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startGame() {
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            score = 0;
+            multiplier = 1.0;
+            maxMultiplier = 1.0;
+            altitude = 25.0;
+            distance = 0.0;
+            lives = 3;
+            orbs = [];
+            particles = [];
+            floatingTexts = [];
+            player.x = canvas.width * 0.2;
+            player.y = canvas.height * 0.5;
+            player.targetX = player.x;
+            player.targetY = player.y;
+            gameState = 'PLAYING';
+        }
+
+        function resetGame() {
+            startGame();
+        }
+
+        function togglePause() {
+            if(gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                document.getElementById('pauseBtn').innerText = 'Sambung';
+            } else if(gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                document.getElementById('pauseBtn').innerText = 'Jeda';
+            }
+        }
+
+        function openGuide() {
+            if(gameState === 'PLAYING') gameState = 'PAUSED';
+            document.getElementById('guideModal').classList.remove('hidden');
+        }
+
+        function closeGuide() {
+            document.getElementById('guideModal').classList.add('hidden');
+            if(gameState === 'PAUSED') gameState = 'PLAYING';
+        }
+
+        // Spawn Word Orbs
+        function spawnOrb() {
+            const isSifat = Math.random() < 0.55; // 55% chance for correct adjective
+            let item;
+            if(isSifat) {
+                const rand = adjSifat[Math.floor(Math.random() * adjSifat.length)];
+                item = { word: rand.word, type: 'sifat', desc: rand.desc };
+            } else {
+                const rand = adjLain[Math.floor(Math.random() * adjLain.length)];
+                item = { word: rand.word, type: 'lain', desc: rand.cat };
+            }
+
+            orbs.push({
+                x: canvas.width + 100,
+                y: Math.random() * (canvas.height - 200) + 80,
+                radius: 36,
+                word: item.word,
+                type: item.type,
+                desc: item.desc,
+                speedX: 3 + Math.random() * 2,
+                bobbleSpeed: 0.05 + Math.random() * 0.05,
+                bobbleAngle: Math.random() * Math.PI * 2
+            });
+        }
+
+        // Particle effect for collisions/explosions
+        function addParticles(x, y, color, count = 15) {
+            for(let i=0; i<count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    radius: Math.random() * 4 + 2,
+                    color: color,
+                    alpha: 1.0,
+                    decay: Math.random() * 0.03 + 0.02
+                });
+            }
+        }
+
+        // Floating score texts (+100, x0.5, etc.)
+        function addFloatingText(text, x, y, color) {
+            floatingTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                vy: -1.5,
+                alpha: 1.0,
+                color: color
+            });
+        }
+
+        // Main Update Loop
+        function update() {
+            if(gameState !== 'PLAYING') return;
+
+            // Distance & Altitude update
+            distance += 0.1;
+            altitude = Math.max(10, Math.min(150, 50 + (canvas.height / 2 - player.y) * 0.2));
+
+            // Player movement
+            if(mouseControl) {
+                player.x += (player.targetX - player.x) * 0.1;
+                player.y += (player.targetY - player.y) * 0.1;
+            } else {
+                let moveSpeed = 6;
+                if(keys['ArrowUp'] || keys['w'] || keys['W']) player.y -= moveSpeed;
+                if(keys['ArrowDown'] || keys['s'] || keys['S']) player.y += moveSpeed;
+                if(keys['ArrowLeft'] || keys['a'] || keys['A']) player.x -= moveSpeed;
+                if(keys['ArrowRight'] || keys['d'] || keys['D']) player.x += moveSpeed;
+            }
+
+            // Boundaries
+            player.x = Math.max(40, Math.min(canvas.width - 40, player.x));
+            player.y = Math.max(60, Math.min(canvas.height - 100, player.y));
+
+            // Spawner
+            spawnTimer++;
+            if(spawnTimer > 75) {
+                spawnOrb();
+                spawnTimer = 0;
+            }
+
+            // Update Orbs
+            for(let i = orbs.length - 1; i >= 0; i--) {
+                let o = orbs[i];
+                o.x -= o.speedX;
+                o.bobbleAngle += o.bobbleSpeed;
+                o.currentY = o.y + Math.sin(o.bobbleAngle) * 12;
+
+                // Collision detection with player
+                let dx = player.x - o.x;
+                let dy = player.y - o.currentY;
+                let dist = Math.sqrt(dx*dx + dy*dy);
+
+                if(dist < o.radius + 25) {
+                    // Collision!
+                    if(o.type === 'sifat') {
+                        // Correct!
+                        score += Math.floor(100 * multiplier);
+                        multiplier = parseFloat((multiplier + 0.2).toFixed(1));
+                        if(multiplier > maxMultiplier) maxMultiplier = multiplier;
+                        addParticles(o.x, o.currentY, '#34d399', 20);
+                        addFloatingText(`+${Math.floor(100 * multiplier)} (${o.word})`, o.x, o.currentY, '#34d399');
+                    } else {
+                        // Incorrect trap! Crash!
+                        lives--;
+                        multiplier = Math.max(1.0, parseFloat((multiplier - 0.5).toFixed(1)));
+                        addParticles(o.x, o.currentY, '#f87171', 25);
+                        addFloatingText(`SALAH! -1 Nyawa (${o.word})`, o.x, o.currentY, '#f87171');
+                        
+                        if(lives <= 0) {
+                            triggerGameOver();
+                        }
+                    }
+                    orbs.splice(i, 1);
+                    continue;
+                }
+
+                // Remove offscreen
+                if(o.x < -60) {
+                    orbs.splice(i, 1);
+                }
+            }
+
+            // Update particles
+            for(let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if(p.alpha <= 0) particles.splice(i, 1);
+            }
+
+            // Update floating texts
+            for(let i = floatingTexts.length - 1; i >= 0; i--) {
+                let ft = floatingTexts[i];
+                ft.y += ft.vy;
+                ft.alpha -= 0.02;
+                if(ft.alpha <= 0) floatingTexts.splice(i, 1);
+            }
+
+            // Update HUD elements
+            document.getElementById('hudScore').innerText = score;
+            document.getElementById('hudMultiplier').innerText = `x${multiplier.toFixed(1)}`;
+            document.getElementById('hudAltitude').innerText = `${altitude.toFixed(1)}m`;
+            
+            let hearts = '';
+            for(let i=0; i<3; i++) {
+                hearts += i < lives ? '❤️' : '🖤';
+            }
+            document.getElementById('hudLives').innerHTML = hearts;
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            document.getElementById('finalScore').innerText = score;
+            document.getElementById('finalMultiplier').innerText = `x${maxMultiplier.toFixed(1)}`;
+            document.getElementById('finalDistance').innerText = `${distance.toFixed(1)}m`;
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+
+        // Render Loop
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. Background Sky Gradient
+            let bgGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bgGrad.addColorStop(0, '#0b132b');
+            bgGrad.addColorStop(0.5, '#1c2541');
+            bgGrad.addColorStop(1, '#3a506b');
+            ctx.fillStyle = bgGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. Background Clouds & Stars (Parallax)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.8, canvas.height * 0.2, 3, 0, Math.PI*2);
+            ctx.arc(canvas.width * 0.4, canvas.height * 0.3, 2, 0, Math.PI*2);
+            ctx.arc(canvas.width * 0.65, canvas.height * 0.15, 2.5, 0, Math.PI*2);
+            ctx.fill();
+
+            // 3. Aircraft Carrier at Bottom (AviaMasters style)
+            let carrierY = canvas.height - 70;
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(canvas.width * 0.25, carrierY, canvas.width * 0.5, 60);
+            ctx.fillStyle = '#334155';
+            ctx.fillRect(canvas.width * 0.28, carrierY - 12, canvas.width * 0.44, 12);
+            // Runway lights
+            ctx.fillStyle = '#f59e0b';
+            for(let lx = canvas.width * 0.3; lx < canvas.width * 0.7; lx += 40) {
+                ctx.fillRect(lx, carrierY + 25, 16, 4);
+            }
+
+            // 4. Render Orbs
+            for(let o of orbs) {
+                ctx.save();
+                ctx.translate(o.x, o.currentY);
+                
+                // Orb Glow & Outer Ring - Uniform blue/gold aesthetic for ALL orbs
+                ctx.beginPath();
+                ctx.arc(0, 0, o.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(59, 130, 246, 0.25)';
+                ctx.strokeStyle = '#60a5fa';
+                ctx.shadowColor = '#3b82f6';
+                ctx.shadowBlur = 15;
+                ctx.fill();
+                ctx.lineWidth = 3;
+                ctx.stroke();
+
+                // Inner circle - Identical dark blue background
+                ctx.beginPath();
+                ctx.arc(0, 0, o.radius - 6, 0, Math.PI * 2);
+                ctx.fillStyle = '#1e3a8a';
+                ctx.fill();
+
+                // Text inside orb - Identical white text
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 13px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(o.word, 0, 0);
+
+                ctx.restore();
+            }
+
+            // 5. Render Player (Red Biplane)
+            ctx.save();
+            ctx.translate(player.x, player.y);
+            
+            // Plane Body (Red Biplane stylized)
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowColor = 'rgba(239, 68, 68, 0.5)';
+            ctx.shadowBlur = 10;
+            // Fuselage
+            ctx.beginPath();
+            ctx.ellipse(0, 0, 36, 14, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Wings
+            ctx.fillStyle = '#b91c1c';
+            ctx.fillRect(-12, -22, 28, 8); // Top wing
+            ctx.fillRect(-12, 14, 28, 8);  // Bottom wing
+
+            // Propeller
+            ctx.fillStyle = '#f8fafc';
+            ctx.fillRect(34, -12, 4, 24);
+
+            // Cockpit glass
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(4, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+
+            // 6. Render Particles
+            for(let p of particles) {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fillStyle = p.color;
+                ctx.fill();
+                ctx.restore();
+            }
+
+            // 7. Render Floating Texts
+            for(let ft of floatingTexts) {
+                ctx.save();
+                ctx.globalAlpha = ft.alpha;
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 14px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = ft.color;
+                ctx.shadowBlur = 8;
+                ctx.fillText(ft.text, ft.x, ft.y);
+                ctx.restore();
+            }
+        }
+
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize loop on window load
+        window.onload = function() {
+            gameLoop();
+        };
+    </script>
+</body>
+</html>
